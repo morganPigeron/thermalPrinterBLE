@@ -11,17 +11,20 @@ Adafruit_Thermal printer(&Serial2); // Or Serial2, Serial3, etc.
 
 BLEServer *pServer = NULL;
 BLECharacteristic *pCharacteristic = NULL;
+BLECharacteristic *pCharacteristicPrinterState = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
 
-std::__cxx11::string BUFFER = "";
+std::__cxx11::string textBuffer = "";
+uint8_t printerState = 0;
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define SERVICE_UUID "81c44919-afbc-49bf-b418-c2640cd1955e"
+#define CHARACTERISTIC_UUID "49937b28-0ac3-4bd8-b7a7-c86af70fc559"
+#define PRINTER_STATE_UUID "fa6828e6-13a0-4308-abb9-baaff423aab9"
 
 class MyServerCallbacks : public BLEServerCallbacks
 {
@@ -51,14 +54,10 @@ class MyCallbacks : public BLECharacteristicCallbacks
 
       Serial.println();
       Serial.println("*********");
-      BUFFER = value.c_str();
-      printer.println(value.c_str());
-
+      textBuffer = value.c_str();
     }
   }
 };
-
-
 
 void setup()
 {
@@ -78,13 +77,18 @@ void setup()
   // Create a BLE Characteristic
   pCharacteristic = pService->createCharacteristic(
       CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_WRITE
-      );
+      BLECharacteristic::PROPERTY_WRITE);
+
+  pCharacteristicPrinterState = pService->createCharacteristic(
+      PRINTER_STATE_UUID,
+      BLECharacteristic::PROPERTY_NOTIFY);
 
   // https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml
   // Create a BLE Descriptor
   pCharacteristic->setCallbacks(new MyCallbacks());
   pCharacteristic->addDescriptor(new BLE2902());
+
+  pCharacteristicPrinterState->addDescriptor(new BLE2902());
 
   // Start the service
   pService->start();
@@ -106,7 +110,14 @@ void setup()
 
 void loop()
 {
-
+  /*
+  // notify changed value
+  if (deviceConnected)
+  {
+    pCharacteristicPrinterState->setValue(&printerState, 1);
+    pCharacteristicPrinterState->notify();
+  }
+  */
   // disconnecting
   if (!deviceConnected && oldDeviceConnected)
   {
@@ -121,9 +132,10 @@ void loop()
     // do stuff here on connecting
     oldDeviceConnected = deviceConnected;
   }
-  if (BUFFER.length() > 0) {
-    printer.println(BUFFER.c_str());
-    BUFFER = "";
+  if (textBuffer.length() > 0)
+  {
+    printer.println(textBuffer.c_str());
+    textBuffer = "";
   }
 }
 
