@@ -44,9 +44,10 @@ class MyCallbacks : public BLECharacteristicCallbacks
   void onWrite(BLECharacteristic *pCharacteristic)
   {
     std::string value = pCharacteristic->getValue();
-
+    
     if (value.length() > 0)
     {
+      /*
       Serial.println("*********");
       Serial.print("New value: ");
       for (int i = 0; i < value.length(); i++)
@@ -54,15 +55,17 @@ class MyCallbacks : public BLECharacteristicCallbacks
 
       Serial.println();
       Serial.println("*********");
+      */
       textBuffer = value.c_str();
     }
+    
   }
 };
 
 void setup()
 {
 
-  Serial.begin(115200);
+  //Serial.begin(115200);
 
   // Create the BLE Device
   BLEDevice::init("PrinterBle");
@@ -78,17 +81,18 @@ void setup()
   pCharacteristic = pService->createCharacteristic(
       CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_WRITE);
-
+  /*
   pCharacteristicPrinterState = pService->createCharacteristic(
       PRINTER_STATE_UUID,
       BLECharacteristic::PROPERTY_NOTIFY);
+  */
 
   // https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml
   // Create a BLE Descriptor
   pCharacteristic->setCallbacks(new MyCallbacks());
   pCharacteristic->addDescriptor(new BLE2902());
 
-  pCharacteristicPrinterState->addDescriptor(new BLE2902());
+  //pCharacteristicPrinterState->addDescriptor(new BLE2902());
 
   // Start the service
   pService->start();
@@ -96,8 +100,8 @@ void setup()
   // Start advertising
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(false);
-  pAdvertising->setMinPreferred(0x0); // set value to 0x00 to not advertise this parameter
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06); // set value to 0x00 to not advertise this parameter
   BLEDevice::startAdvertising();
   Serial.println("Waiting a client connection to notify...");
 
@@ -139,6 +143,7 @@ void loop()
   }
 }
 
+/*
 void print()
 {
   // The following calls are in setup(), but don't *need* to be.  Use them
@@ -215,3 +220,4 @@ void print()
   printer.wake();       // MUST wake() before printing again, even if reset
   printer.setDefault(); // Restore printer to defaults
 }
+*/
